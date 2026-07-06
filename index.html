@@ -863,3 +863,276 @@
                 <a onclick="navigateTo('work')">Work</a>
                 <a onclick="navigateTo('about')">About</a>
                 <a onclick="navigateTo('team
+                <a onclick="navigateTo('team')">Team</a>
+                <a onclick="navigateTo('contact')">Contact</a>
+            </div>
+            <div class="footer-col">
+                <h4>Services</h4>
+                <a onclick="navigateTo('services')">Web Development</a>
+                <a onclick="navigateTo('services')">Mobile Apps</a>
+                <a onclick="navigateTo('services')">UI / UX Design</a>
+                <a onclick="navigateTo('services')">Cloud Solutions</a>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <a href="#">LinkedIn</a>
+                <a href="#">Twitter</a>
+                <a href="#">GitHub</a>
+                <a href="#">Dribbble</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2025 SCB Production. All rights reserved.</span>
+            <span>Privacy Policy &middot; Terms of Service</span>
+        </div>
+    </footer>
+
+    <script>
+    // ===== PRELOADER =====
+    (function() {
+        const fill = document.getElementById('preloaderFill');
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 15 + 5;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                setTimeout(() => {
+                    document.getElementById('preloader').classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 400);
+            }
+            fill.style.width = progress + '%';
+        }, 180);
+        document.body.style.overflow = 'hidden';
+    })();
+
+    // ===== STATE =====
+    let users = JSON.parse(localStorage.getItem('scb_users') || '[]');
+    let currentUser = JSON.parse(localStorage.getItem('scb_current_user') || 'null');
+    let currentPage = 'home';
+
+    // ===== NAVIGATION =====
+    function navigateTo(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        const target = document.getElementById('page-' + page);
+        if (target) {
+            target.classList.add('active');
+            currentPage = page;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        // Close mobile menu
+        document.getElementById('mobileMenu').classList.remove('active');
+        document.querySelector('.mobile-toggle').classList.remove('active');
+        // Trigger reveal animations
+        setTimeout(() => triggerReveal(), 100);
+        if (page === 'about') setTimeout(animateCounters, 600);
+        updateNavAuth();
+    }
+
+    // ===== REVEAL ON SCROLL =====
+    function triggerReveal() {
+        const reveals = document.querySelectorAll('.reveal');
+        reveals.forEach(el => {
+            const rect = el.getBoundingClientRect();
+            if (rect.top < window.innerHeight - 60) {
+                el.classList.add('visible');
+            }
+        });
+    }
+
+    document.addEventListener('scroll', triggerReveal);
+    window.addEventListener('load', () => setTimeout(triggerReveal, 300));
+
+    // ===== COUNTER ANIMATION =====
+    function animateCounters() {
+        document.querySelectorAll('.about-stat .number').forEach(el => {
+            const target = parseInt(el.getAttribute('data-count'));
+            const suffix = el.closest('.about-stat').querySelector('.label')?.textContent.includes('Satisfaction') ? '%' : '';
+            let current = 0;
+            const step = Math.ceil(target / 40);
+            const interval = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(interval);
+                }
+                el.textContent = current + suffix;
+            }, 30);
+        });
+    }
+
+    // ===== AUTH SYSTEM =====
+    function openAuth(tab) {
+        document.getElementById('authOverlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        switchAuthTab(tab);
+    }
+
+    function closeAuth() {
+        document.getElementById('authOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('regError').style.display = 'none';
+    }
+
+    function switchAuthTab(tab) {
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+        document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
+        document.getElementById(tab + 'Form').classList.add('active');
+        document.getElementById('loginError').style.display = 'none';
+        document.getElementById('regError').style.display = 'none';
+        document.getElementById('regSuccess').style.display = 'none';
+    }
+
+    function handleRegister() {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const err = document.getElementById('regError');
+
+        if (!name || !email || !password) {
+            err.textContent = 'All fields are required.';
+            err.style.display = 'block';
+            return;
+        }
+        if (password.length < 6) {
+            err.textContent = 'Password must be at least 6 characters.';
+            err.style.display = 'block';
+            return;
+        }
+        if (users.find(u => u.email === email)) {
+            err.textContent = 'An account with this email already exists.';
+            err.style.display = 'block';
+            return;
+        }
+
+        users.push({ name, email, password, created: new Date().toISOString() });
+        localStorage.setItem('scb_users', JSON.stringify(users));
+        err.style.display = 'none';
+        document.getElementById('regSuccess').style.display = 'block';
+        document.getElementById('regName').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPassword').value = '';
+        setTimeout(() => switchAuthTab('login'), 1200);
+    }
+
+    function handleLogin() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const err = document.getElementById('loginError');
+
+        const user = users.find(u => u.email === email && u.password === password);
+        if (!user) {
+            err.textContent = 'Invalid email or password.';
+            err.style.display = 'block';
+            return;
+        }
+
+        currentUser = user;
+        localStorage.setItem('scb_current_user', JSON.stringify(user));
+        err.style.display = 'none';
+        closeAuth();
+        updateNavAuth();
+        navigateTo('dashboard');
+        document.getElementById('dashUserName').textContent = user.name;
+    }
+
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('scb_current_user');
+        updateNavAuth();
+        navigateTo('home');
+    }
+
+    function updateNavAuth() {
+        const signIn = document.getElementById('signInBtn');
+        const getStarted = document.getElementById('getStartedBtn');
+        const userName = document.getElementById('navUserName');
+
+        if (currentUser) {
+            signIn.style.display = 'none';
+            getStarted.style.display = 'none';
+            userName.style.display = 'block';
+            userName.textContent = currentUser.name;
+        } else {
+            signIn.style.display = 'block';
+            getStarted.style.display = 'block';
+            userName.style.display = 'none';
+        }
+    }
+
+    // ===== CONTACT FORM =====
+    function handleContactForm(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('.btn-submit');
+        const orig = btn.textContent;
+        btn.textContent = 'Sending...';
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+
+        setTimeout(() => {
+            btn.textContent = 'Message Sent';
+            btn.style.background = '#30d158';
+            setTimeout(() => {
+                btn.textContent = orig;
+                btn.style.background = '#0071e3';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }, 2000);
+            e.target.reset();
+        }, 1200);
+    }
+
+    // ===== SERVICE CARD MOUSE TRACK =====
+    function handleCardMove(e, card) {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.setProperty('--mx', x + '%');
+        card.style.setProperty('--my', y + '%');
+    }
+
+    // ===== MOBILE MENU =====
+    function toggleMobileMenu() {
+        const menu = document.getElementById('mobileMenu');
+        const toggle = document.querySelector('.mobile-toggle');
+        menu.classList.toggle('active');
+        toggle.classList.toggle('active');
+    }
+
+    // ===== NAVBAR HIDE/SHOW ON SCROLL =====
+    let lastScroll = 0;
+    document.addEventListener('scroll', () => {
+        const nav = document.getElementById('navbar');
+        const current = window.scrollY;
+        if (current > lastScroll && current > 100) {
+            nav.classList.add('hidden');
+        } else {
+            nav.classList.remove('hidden');
+        }
+        lastScroll = current;
+    });
+
+    // ===== INIT =====
+    updateNavAuth();
+    if (currentUser) {
+        document.getElementById('dashUserName').textContent = currentUser.name;
+    }
+    triggerReveal();
+
+    // Close auth on overlay click
+    document.getElementById('authOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeAuth();
+    });
+
+    // Keyboard escape for auth
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAuth();
+    });
+    </script>
+</body>
+</html>
+
+
